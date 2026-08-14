@@ -33,6 +33,7 @@ typedef struct __attribute__((packed))
 typedef struct __attribute__((packed)){
     uint8_t  protocol_version;    // Protocol compatibility
     uint8_t  message_type;        // MSG_STATUS_REPLY
+    uint16_t firmware_version;  
     uint8_t  values[4];
     uint16_t battery_mv;
     int16_t rssi;

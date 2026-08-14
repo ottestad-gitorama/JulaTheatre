@@ -72,7 +72,8 @@ void app_main() {
     while(true){
       terminalUpdate();
       fixtureUpdate(); // TODO: Move this to radio rx?
-      delay(100);
+      delay(10);
+      // printf("Battery voltage = %imV\n", (int)(batteryVoltage*1000));
     }
 
 

@@ -140,6 +140,7 @@ void sendReply(uint16_t battery_mv){
   status_reply_t reply;
   reply.protocol_version = PROTOCOL_VERSION;
   reply.message_type = MSG_STATUS_REPLY;
+  reply.firmware_version = FIRMWARE_VERSION;
   reply.battery_mv = battery_mv;
   reply.rssi = rssi;
   reply.packet_loss = packet_loss;

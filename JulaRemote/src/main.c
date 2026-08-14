@@ -4,7 +4,6 @@
 #include "common.h"
 #include "storage.h"
 
-
 void app_main() {
     initNVS();
     radioSetup();

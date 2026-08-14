@@ -117,20 +117,22 @@ void terminalParse(char *str){
     if (pieceCount == 2){
         if (!strcmp(pieces[0], "status")){
             // Request status from peer. Result will be handled by rx callback
+            printf("Requesting status\n");
             int peerNo = atoi(pieces[1]);
             sendCommand(peerNo, MSG_GET_STATUS, 0);
             parsed = true;
         }
         if (!strcmp(pieces[0], "config")){
             // Request config from peer. Result will be handled by rx callback
+            printf("Requesting config\n");
             int peerNo = atoi(pieces[1]);
             sendCommand(peerNo, MSG_GET_CONFIG, 0);
             parsed = true;
         }
         if (!strcmp(pieces[0], "ident")){
             // Request identify blink from peer
-            int peerNo = atoi(pieces[1]);
             printf("Request identity\n");
+            int peerNo = atoi(pieces[1]);
             sendCommand(peerNo, MSG_IDENTIFY, 0);
             parsed = true;
         }

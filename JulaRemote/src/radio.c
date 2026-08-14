@@ -81,6 +81,7 @@ void on_data_recv(const esp_now_recv_info_t * esp_now_info, const uint8_t *incom
     if (status_reply->protocol_version != PROTOCOL_VERSION) return; // Wrong protocol
     if (status_reply->message_type != MSG_STATUS_REPLY) return; // wrong message
     printf("Status reply:\n");
+    printf("Firmware: %i\n", status_reply->firmware_version);
     printf("Battery: %imV\n", status_reply->battery_mv);
     printf("rssi: %idB\n", status_reply->rssi);
     printf("Packet loss: %i\n", status_reply->packet_loss);
