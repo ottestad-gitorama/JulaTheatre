@@ -22,8 +22,10 @@
 
 void fixtureInit();
 void setFixtureDefaults();
+void setFixtureConfig(config_enum parameter, uint16_t value);
+uint16_t getFixtureConfig(config_enum parameter);
 void fixtureUpdate();
-void setLedChannel(ledc_channel_t pwm_channel, uint8_t value);
+void setLedChannel(ledc_channel_t pwm_channel, uint8_t value, float gamma);
 void setW(uint8_t w);
 void setRGB(uint8_t r, uint8_t g, uint8_t b);
 void setRGBW(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
@@ -33,6 +35,7 @@ void fixtureIdentify();
 void fixtureSetDmxAddress(uint16_t address);
 void fixtureSetChannelCount(uint16_t channelCount);
 void fixtureSetPersonality(uint16_t personality);
+void fixtureSetGamma(uint8_t ch, float gamma);
 
 extern float batteryVoltage;
 extern fixture_config_t fixture_config;

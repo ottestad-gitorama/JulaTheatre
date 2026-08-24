@@ -6,11 +6,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "common.h"
-#define PROTOCOL_VERSION 100 // 1.00
+#include "utils.h"
 
 
 void radioSetup();
 void sendLightFrame();
 void print_mac_address();
-void sendCommand(uint8_t peerNo, uint8_t message, uint16_t par);
-void sendDiscoverRequest();
+// void sendCommand(uint8_t peerNo, uint8_t message, uint16_t par);
+void sendMessage(const uint8_t *peer_address,message_enum msg_type, uint16_t parameter, uint16_t value);
+// void sendDiscoverRequest();
+bool waitForReply();

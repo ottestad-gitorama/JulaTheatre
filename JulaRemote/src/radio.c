@@ -7,6 +7,10 @@ int16_t rssi;
 uint16_t packet_loss;
 uint16_t sequence = 0;
 bool peerSet = false;
+status_reply_t status_reply;
+uint16_t config_reply_parameter_no = 0;
+uint16_t config_reply_value = 0;
+bool replyOk = false;
 
 uint16_t getCRC(const uint8_t *data, uint16_t len)
 {
@@ -27,6 +31,7 @@ uint16_t getCRC(const uint8_t *data, uint16_t len)
 
 bool checkCRC(const uint8_t *data, uint16_t len){
   // Returns true if checksum stored in the last two bytes matches the crc of the rest of the buffer
+  if (len < 2) return false;
   uint16_t crc = getCRC(data, len-2);
 //  uint16_t expected_crc = ((uint16_t)data[len - 2] << 8) | data[len - 1];
   uint16_t expected_crc = data[len - 2] | ((uint16_t)data[len - 1] << 8);
@@ -55,7 +60,6 @@ void on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 void addPeerList(uint8_t * _peerAddress){
   if (peerCount >= MAX_PEERS) return;
   if (esp_now_is_peer_exist(_peerAddress)){
-    printf("Peer already exist\n");
     return;
   }
   memcpy(peerList[peerCount], _peerAddress, 6);
@@ -70,44 +74,42 @@ void addPeerList(uint8_t * _peerAddress){
   ESP_ERROR_CHECK(esp_now_add_peer(&peerInfo));
 }
 
-
 // Callback when data is received
 void on_data_recv(const esp_now_recv_info_t * esp_now_info, const uint8_t *incomingData, int len) {
-  printf("RX: %i\n", len);
   if (!checkCRC(incomingData, len)) return;
-  if (len == sizeof(status_reply_t)){
-    printf("Received status reply size\n");
-    status_reply_t* status_reply = (status_reply_t*) incomingData;
-    if (status_reply->protocol_version != PROTOCOL_VERSION) return; // Wrong protocol
-    if (status_reply->message_type != MSG_STATUS_REPLY) return; // wrong message
-    printf("Status reply:\n");
-    printf("Firmware: %i\n", status_reply->firmware_version);
-    printf("Battery: %imV\n", status_reply->battery_mv);
-    printf("rssi: %idB\n", status_reply->rssi);
-    printf("Packet loss: %i\n", status_reply->packet_loss);
-    printf("Values:\t%i\t%i\t%i\t%i\n", status_reply->values[0], status_reply->values[1], status_reply->values[2], status_reply->values[3]);
+  // message_t and light_frame_t shares same header, so this works for initial checks
+  const message_t* message =  (message_t*) incomingData;
+  if (message->protocol_version != PROTOCOL_VERSION) {printf("Wrong protocol\n"); return;}
+  message_enum msg_type = message->message_type;
+
+  if (msg_type==MSG_STATUS_REPLY){
+    if (len != sizeof(status_reply_t)) {printf("Wrong status reply size\n"); return;}
+  } else {
+    if (len != sizeof(message_t)) {printf("Wrong message size\n"); return;}
   }
-  if (len == sizeof(get_config_reply_t)){
-    printf("Received config reply size\n");
-    get_config_reply_t* config_reply = (get_config_reply_t*) incomingData;
-    if (config_reply->protocol_version != PROTOCOL_VERSION) return; // Wrong protocol
-    if (config_reply->message_type != MSG_GET_CONFIG_REPLY) return; // Wrong message
-    fixture_config_t config = config_reply->config;
-    printf("Config received:\n");
-    printf("Dmx address: %i\n", config.dmx_address);    
-    printf("Channel count: %i\n", config.channel_count);    
-    printf("Personality:%i\n", config.personality);    
-  } 
 
-  if (len == sizeof(discover_t)){
-    discover_t* discover = (discover_t*) incomingData;
-    if (discover->protocol_version != PROTOCOL_VERSION) return; // Wrong protocol
-    if (discover->message_type == MSG_DISCOVER_REPLY) {
-
-    }    
-    addPeerList(esp_now_info->src_addr);
-  } 
+  switch (msg_type)
+  {
+    case MSG_STATUS_REPLY:
+      {
+        memcpy(&status_reply, incomingData, sizeof(status_reply_t));
+        replyOk = true;
+        break;
+      }
+    case MSG_CONFIG_REPLY:
+      config_reply_parameter_no = message->parameter;
+      config_reply_value = message->value;
+      replyOk = true;
+      break;
+    case MSG_DISCOVER_REPLY:
+      addPeerList(esp_now_info->src_addr);
+      break;
+    default:
+      printf("Wrong message type\n");
+      break;
+  }
 }
+
 
 void radioSetup() {
     // Initialize WiFi in Station mode
@@ -130,29 +132,52 @@ void radioSetup() {
     ESP_ERROR_CHECK(esp_now_add_peer(&broadcastPeer));
 }
 
-void sendCommand(uint8_t peerNo, uint8_t message, uint16_t par){
-  command_t command;
-  command.protocol_version = PROTOCOL_VERSION;
-  command.message_type = message;
-  command.parameter = par;
-  command.crc = getCRC((const uint8_t *) &command, sizeof(command_t)-2);
-  esp_err_t err = esp_now_send(peerList[peerNo], (uint8_t *) &command, sizeof(command_t)); 
+// void send(uint8_t peerNo, uint8_t message, uint16_t par){
+//   replyOk = false;
+//   command_t command;
+//   command.protocol_version = PROTOCOL_VERSION;
+//   command.message_type = message;
+//   command.parameter = par;
+//   command.crc = getCRC((const uint8_t *) &command, sizeof(command_t)-2);
+//   esp_err_t err = esp_now_send(peerList[peerNo], (uint8_t *) &command, sizeof(command_t)); 
+//   if (err != ESP_OK) {
+//     printf("Esp error %i while sending\n", err);
+//   }
+// }
+
+// void sendDiscoverRequest(){
+//   // remove existing peers:
+//   for (int i = 0; i < peerCount; i++) {
+//     esp_now_del_peer(peerList[i]);
+//   }
+//   peerCount = 0;
+
+
+//   discover_t discover;
+//   discover.protocol_version = PROTOCOL_VERSION;
+//   discover.message_type = MSG_DISCOVER;
+//   discover.crc = getCRC((const uint8_t *) &discover, sizeof(discover_t)-2);
+
+//   esp_err_t err = esp_now_send(broadcastAddress, (uint8_t *) &discover, sizeof(discover_t)); 
+//   if (err != ESP_OK) {
+//     printf("Esp error %i while sending\n", err);
+//   }
+// }
+
+void sendMessage(const uint8_t *peer_address,message_enum msg_type, uint16_t parameter, uint16_t value){
+  replyOk = false;
+  message_t message;
+  message.protocol_version = PROTOCOL_VERSION;
+  message.message_type = (uint8_t) msg_type;
+  message.parameter = parameter;
+  message.value = value;
+  message.crc = getCRC((const uint8_t *) &message, sizeof(message_t)-2);
+  esp_err_t err = esp_now_send(peer_address, (uint8_t *) &message, sizeof(message_t)); 
   if (err != ESP_OK) {
-    printf("Esp error %i while sending\n", err);
+    // I dont care
   }
 }
 
-void sendDiscoverRequest(){
-  discover_t discover;
-  discover.protocol_version = PROTOCOL_VERSION;
-  discover.message_type = MSG_DISCOVER;
-  discover.crc = getCRC((const uint8_t *) &discover, sizeof(discover_t)-2);
-
-  esp_err_t err = esp_now_send(broadcastAddress, (uint8_t *) &discover, sizeof(discover_t)); 
-  if (err != ESP_OK) {
-    printf("Esp error %i while sending\n", err);
-  }
-}
 
 void sendLightFrame(){
   light_frame_t lightFrame;
@@ -168,3 +193,15 @@ void sendLightFrame(){
   }
 }
 
+#define REPLY_TIMEOUT 100
+bool waitForReply(){
+  long startTime = millis();
+  while(!replyOk){
+    if (millis()-startTime > REPLY_TIMEOUT){
+      printf("No reply!\n");
+      return false;
+    }
+    delay(10);
+  }
+  return true;
+}

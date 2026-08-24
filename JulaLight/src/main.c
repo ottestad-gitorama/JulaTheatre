@@ -5,35 +5,6 @@
 #include "terminal.h"
 #include "storage.h"
 
-void doCommand(uint16_t command, uint16_t parameter){
-    switch(command){
-      case MSG_IDENTIFY:
-        printf("rx: Identify\n");
-        fixtureIdentify();
-      break;
-      case MSG_GET_CONFIG:
-        printf("rx: Get config\n");
-        sendConfig();
-      break;
-      case MSG_GET_STATUS:
-        printf("rx: Get status\n");
-        sendReply((uint16_t)(1000.0*batteryVoltage));
-      break;
-      break;
-      case MSG_SET_DMX_ADDRESS:
-        printf("rx: Set dmx address\n");
-        fixtureSetDmxAddress(parameter);
-      break;
-      case MSG_SET_FIXTURE_CHANNELS:
-        printf("rx: set fixture channels\n");
-        fixtureSetChannelCount(parameter);
-      break;
-      case MSG_SET_FIXTURE_PERSONALITY:
-        printf("tx: set fixture personality\n");
-        fixtureSetPersonality(parameter);
-      break;
-    }
-}
 
 void app_main() {
   terminalSetup();
@@ -42,25 +13,6 @@ void app_main() {
   radioSetup();
   print_mac_address();
 
-  while (false){
-      // setLedChannel(PWM_LED_RED, 63);
-      // delay(500);
-      // setLedChannel(PWM_LED_RED, 127);
-      // delay(500);
-      // setLedChannel(PWM_LED_RED, 128+63);
-      // delay(500);
-      // setLedChannel(PWM_LED_RED, 255);
-      // delay(500);
-      for (int i=0; i<10; i++){
-        setLedChannel(PWM_LED_RED, i*20);
-        readBatteryVoltage();
-        delay(1000);
-        printf("Batt: %.4fV\n", batteryVoltage);
-      }
-      setLedChannel(PWM_LED_RED, 0);
-      delay(1000);
-      
-    }
     printf("Channels: %i\t%i\t%i\t%i\n", channelValues[0],channelValues[1],channelValues[2],channelValues[3]);
     printf("Battery: %0.2fV\n", batteryVoltage);
     printf("Rssi: %i\ndB", rssi);
@@ -70,6 +22,13 @@ void app_main() {
     printf("Personality: %i\n", fixture_config.personality);
     printf("Starting main loop!\n");
     while(true){
+      if (doDiscoverBeaconing){
+        for (int i=0; i<3; i++){ // several sends to compensate for cross talk
+          delay(esp_random()%200+10); // Random delay to avoid cross talk
+          sendMessage(MSG_DISCOVER_REPLY, 0, 0);
+        }
+        doDiscoverBeaconing = false;
+      }
       terminalUpdate();
       fixtureUpdate(); // TODO: Move this to radio rx?
       delay(10);

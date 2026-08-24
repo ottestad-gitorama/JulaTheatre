@@ -96,7 +96,73 @@ void setFixtureDefaults(){
     fixture_config.channel_count = 4; // Default
     fixture_config.dmx_address = 1; // Default
     fixture_config.personality = 0; // Default
+    fixture_config.gamma[0] =2.0;
+    fixture_config.gamma[1] =2.0;
+    fixture_config.gamma[2] =2.0;
+    fixture_config.gamma[3] =2.0;
 }
+
+void setFixtureConfig(config_enum parameter, uint16_t value){
+  switch(parameter){
+    case CFG_ADDRESS:
+        if (value >= DMX_UNIVERSE_SIZE) {printf("Illegal address: %i\n", value); return;}
+        fixture_config.dmx_address = value;
+        saveSettings();
+        break;
+    case CFG_CHANNEL_COUNT:
+        if ((value!=1) && (value!=3) && (value!=4)) {printf("Illegal ch count: %i\n", value); return;}
+        fixture_config.channel_count = value;
+        saveSettings();
+        break;
+    case CFG_PERSONALITY:
+        if (value!=0) {printf("Illegal personality: %i\n", value); return;}
+        fixture_config.personality = value;
+        saveSettings();
+        break;
+    case CFG_GAMMA_0:
+        // I'll skip guard for gamme correction. Knock yourselves out!
+        fixture_config.gamma[0] = value/1000.0;
+        break;
+    case CFG_GAMMA_1:
+        fixture_config.gamma[1] = value/1000.0;
+        break;
+    case CFG_GAMMA_2:
+        fixture_config.gamma[2] = value/1000.0;
+        break;
+    case CFG_GAMMA_3:
+        fixture_config.gamma[3] = value/1000.0;
+        break;
+  }
+}
+
+uint16_t getFixtureConfig(config_enum parameter){
+  switch(parameter){
+    case CFG_ADDRESS:
+        return fixture_config.dmx_address;
+        break;
+    case CFG_CHANNEL_COUNT:
+        return (uint16_t) fixture_config.channel_count;
+        break;
+    case CFG_PERSONALITY:
+        return (uint16_t) fixture_config.personality;
+        break;
+    case CFG_GAMMA_0:
+        return (uint16_t) (fixture_config.gamma[0]*1000.0);
+        break;
+    case CFG_GAMMA_1:
+        return (uint16_t) (fixture_config.gamma[1]*1000.0);
+        break;
+    case CFG_GAMMA_2:
+        return (uint16_t) (fixture_config.gamma[2]*1000.0);
+        break;
+    case CFG_GAMMA_3:
+        return (uint16_t) (fixture_config.gamma[3]*1000.0);
+        break;
+  }
+  printf("Parameter type not found!\n");
+  return 0;
+}
+
 
 void fixtureInit(){
     // Fixture init
@@ -144,12 +210,12 @@ void fixtureInit(){
 #define MAX_VAL_AT_12BIT 4095
 #define MAX_VAL_AT_13BIT 2*4095
 #define MAX_VAL_AT_14BIT 4*4095
-void setLedChannel(ledc_channel_t pwm_channel, uint8_t value){
+void setLedChannel(ledc_channel_t pwm_channel, uint8_t value, float gamma){
     // Set selected led output to value range 0-255, and apply gamma
     // Normalize
     float l = value * NORMALIZE_FACTOR_255;
     // Gamma correction
-    l = pow(l, GAMMA_CORRECTION_FACTOR);
+    l = pow(l, gamma);
     // Set pwm
     uint16_t out = (uint16_t)(l*MAX_VAL_AT_13BIT);
     // printf("led ch %i to val %i => %f => %i\n", pwm_channel, value, l, out);
@@ -159,17 +225,21 @@ void setLedChannel(ledc_channel_t pwm_channel, uint8_t value){
 }
 
 void setW(uint8_t w){
+    channelValues[0] = 0;
+    channelValues[1] = 0;
+    channelValues[2] = 0;
     channelValues[3] = w;
-    setLedChannel(PWM_LED_WHITE, w);
+    setLedChannel(PWM_LED_WHITE, w, fixture_config.gamma[0]);
 }
 
 void setRGB(uint8_t r, uint8_t g, uint8_t b){
     channelValues[0] = r;
     channelValues[1] = g;
     channelValues[2] = b;
-    setLedChannel(PWM_LED_RED, r);
-    setLedChannel(PWM_LED_GREEN, g);
-    setLedChannel(PWM_LED_BLUE, b);
+    channelValues[3] = 0;
+    setLedChannel(PWM_LED_RED, r, fixture_config.gamma[0]);
+    setLedChannel(PWM_LED_GREEN, g, fixture_config.gamma[1]);
+    setLedChannel(PWM_LED_BLUE, b, fixture_config.gamma[2]);
 }
 
 void setRGBW(uint8_t r, uint8_t g, uint8_t b, uint8_t w){
@@ -177,19 +247,19 @@ void setRGBW(uint8_t r, uint8_t g, uint8_t b, uint8_t w){
     channelValues[1] = g;
     channelValues[2] = b;
     channelValues[3] = w;
-    setLedChannel(PWM_LED_RED, r);
-    setLedChannel(PWM_LED_GREEN, g);
-    setLedChannel(PWM_LED_BLUE, b);
-    setLedChannel(PWM_LED_WHITE, w);
+    setLedChannel(PWM_LED_RED, r, fixture_config.gamma[0]);
+    setLedChannel(PWM_LED_GREEN, g, fixture_config.gamma[1]);
+    setLedChannel(PWM_LED_BLUE, b, fixture_config.gamma[2]);
+    setLedChannel(PWM_LED_WHITE, w, fixture_config.gamma[3]);
 }
 
 void fixtureIdentify(){
     // Identify fixture visually. Will block main loop during.
-    for (int i=0; i<3; i++){
+    for (int i=0; i<4; i++){
         setRGBW(255, 255, 255, 255);
-        delay(500);
+        delay(50);
         setRGBW(0, 0, 0, 0);
-        delay(500);
+        delay(50);
     }
 }
 
@@ -205,6 +275,11 @@ void fixtureSetChannelCount(uint16_t channelCount){
 
 void fixtureSetPersonality(uint16_t personality){
     fixture_config.personality = personality;
+    saveSettings();
+}
+
+void fixtureSetGamma(uint8_t ch, float gamma){
+    fixture_config.gamma[ch] = gamma;
     saveSettings();
 }
 
