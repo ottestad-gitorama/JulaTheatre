@@ -50,7 +50,8 @@ void print_mac_address() {
 }
 
 // Callback when data is sent
-void on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void on_data_sent(const esp_now_send_info_t *tx_info, esp_now_send_status_t status){
+// void on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   if (status == ESP_NOW_SEND_FAIL) {
     // I dont care.
   }
@@ -179,3 +180,21 @@ void sendStatus(){
     // I dont care
   }
 }
+
+void changeWifiChannel(uint8_t wifiChannel) {
+    wifi_country_t country;
+    ESP_ERROR_CHECK(esp_wifi_get_country(&country));
+
+    if (wifiChannel < country.schan ||
+        wifiChannel >= country.schan + country.nchan) {
+        printf("Wi-Fi channel %u is outside the configured range\n", wifiChannel);
+        return;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_channel(wifiChannel, WIFI_SECOND_CHAN_NONE));
+} 
+
+bool isLegalWifiChannel(uint8_t wifiChannel){
+  return ((wifiChannel>=1) && (wifiChannel<=11));
+}
+

@@ -1,7 +1,10 @@
 #pragma once
 #include <stdio.h>
 
+// #define TEST_RADIO_RANGE
 #define PROTOCOL_VERSION 101 // 1.01
+#define DISCOVER_REPLY_COUNT 10 // number of random replies for safer discovery
+#define DISCOVER_REPLY_RANDOM_TIME 200 // in ms
 
 
 // FIXTURE ///////////////////////////////////////////////////////////////////////////////////////
@@ -11,6 +14,7 @@ extern uint8_t dmx_universe[DMX_UNIVERSE_SIZE];
 typedef struct
 {
     uint16_t  dmx_address;         // Human-readable ID
+    uint8_t wifi_channel;
     uint8_t  channel_count;   // 1, 3 or 4
     uint8_t  personality;     // Future use
     float gamma[4];
@@ -53,6 +57,7 @@ typedef enum
 
 typedef enum{
     CFG_ADDRESS = 0,
+    CFG_WIFI_CHANNEL,
     CFG_CHANNEL_COUNT,
     CFG_PERSONALITY,
     CFG_GAMMA_0,
@@ -73,33 +78,6 @@ typedef struct __attribute__((packed)){
     uint16_t crc;
 } status_reply_t;
 
-// typedef struct  __attribute__((packed))
-// {
-//     uint8_t  protocol_version;    // Protocol compatibility
-//     uint8_t  message_type;        // MSG_GET_CONFIG_REPLY
-//     fixture_config_t config;
-//     uint16_t crc;
-    
-// } get_config_reply_t;
-
-// typedef struct __attribute__ ((packed)){
-//     uint8_t  protocol_version;    // Protocol compatibility
-//     uint8_t  message_type;        // MSG_DISCOVER
-//     uint16_t crc;
-// } discover_t;
-
-
-    // MSG_LIGHT_FRAME = 0,
-    // MSG_DISCOVER,
-    // MSG_DISCOVER_REPLY,               
-    // MSG_IDENTIFY,
-    // MSG_GET_STATUS,
-    // MSG_STATUS_REPLY,
-    // MSG_GET_CONFIG,
-    // MSG_GET_CONFIG_REPLY,
-    // MSG_SET_DMX_ADDRESS,
-    // MSG_SET_FIXTURE_CHANNELS,
-    // MSG_SET_FIXTURE_PERSONALITY
 
 
 

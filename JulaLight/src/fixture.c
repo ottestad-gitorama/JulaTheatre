@@ -109,6 +109,13 @@ void setFixtureConfig(config_enum parameter, uint16_t value){
         fixture_config.dmx_address = value;
         saveSettings();
         break;
+    case CFG_WIFI_CHANNEL:
+        if (isLegalWifiChannel(value)){
+            changeWifiChannel(value);
+            fixture_config.wifi_channel = value;
+            saveSettings();
+        }
+    break;
     case CFG_CHANNEL_COUNT:
         if ((value!=1) && (value!=3) && (value!=4)) {printf("Illegal ch count: %i\n", value); return;}
         fixture_config.channel_count = value;
@@ -139,6 +146,9 @@ uint16_t getFixtureConfig(config_enum parameter){
   switch(parameter){
     case CFG_ADDRESS:
         return fixture_config.dmx_address;
+        break;
+    case CFG_WIFI_CHANNEL:
+        return fixture_config.wifi_channel;
         break;
     case CFG_CHANNEL_COUNT:
         return (uint16_t) fixture_config.channel_count;

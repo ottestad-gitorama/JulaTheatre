@@ -176,17 +176,19 @@ void printHelp() {
     printf("\n");
     printf("Wrong input. These are legal:  \n");
     printf("dmx                             List dmx values\n");
-    printf("dmx [ch] [val]                   Set dmx value\n");
-    printf("discover                      \n");
-    printf("list                          list discovered units\n");
-    printf("adr [unit] [channel]     Set unit dmx address\n");
-    printf("count [unit] [count]         Set unit channel count\n");
-    printf("pers [unit] [pers]           Set unit personality\n");
-    printf("status [unit]                 Get status of unit\n");
-    printf("config [unit]                Get config of unit\n");
-    printf("ident [unit]                  Identify unit\n");
+    printf("dmx [ch] [val]                  Set dmx value\n");
+    printf("discover                                \n");
+    printf("list                            list discovered units\n");
+    printf("adr [unit] [channel]            Set unit dmx address\n");
+    printf("count [unit] [count]            Set unit channel count\n");
+    printf("pers [unit] [pers]              Set unit personality\n");
+    printf("status [unit]                   Get status of unit\n");
+    printf("config [unit]                   Get config of unit\n");
+    printf("ident [unit]                    Identify unit\n");
+    printf("wifi [unit] [channel]           Set wifi channel(1-11)\n");
+    printf("wifi [channel]                  Set wifi channel(1-11)\n");
+    printf("wifi                            Get current channel\n");
 }
-
 
 
 void removeTrailingNewline(char *str) {
@@ -201,6 +203,10 @@ void removeTrailingNewline(char *str) {
 void showConfigFromPeerList(int peerNo){
     printf("%02x:%02x:%02x:%02x:%02x:%02x\t", 
     peerList[peerNo][0], peerList[peerNo][1], peerList[peerNo][2], peerList[peerNo][3], peerList[peerNo][4], peerList[peerNo][5]);
+    sendMessage(peerList[peerNo], MSG_CONFIG_REQUEST, CFG_WIFI_CHANNEL, 0);
+    if (waitForReply()){
+        if (config_reply_parameter_no == CFG_WIFI_CHANNEL){printf("wifi ch:%i\t", config_reply_value);}
+    } else {printf("wifi ch: -\t");}
     sendMessage(peerList[peerNo], MSG_CONFIG_REQUEST, CFG_ADDRESS, 0);
     if (waitForReply()){
         if (config_reply_parameter_no == CFG_ADDRESS){printf("adr:%i\t", config_reply_value);}
@@ -235,6 +241,16 @@ void showConfigFromPeerList(int peerNo){
 
     printf("\n");
 }
+
+void listPeers(){
+    printf("Discovered peers: \n");
+    for (int i=0; i<peerCount; i++){
+        printf("%i:\t", i);
+        printf("%02x:%02x:%02x:%02x:%02x:%02x\n", 
+            peerList[i][0], peerList[i][1], peerList[i][2], peerList[i][3], peerList[i][4], peerList[i][5]);
+    }
+}
+
 
 //  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
 // ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
@@ -275,18 +291,22 @@ void terminalParse(char *str){
             parsed = true;
         }
         if (!strcmp(pieces[0], "discover")){
+            removeAllPeers();
             sendMessage(broadcastAddress, MSG_DISCOVER, 0, 0);
+            delay(DISCOVER_REPLY_COUNT*DISCOVER_REPLY_RANDOM_TIME);
+            listPeers();
             parsed = true;
         }
         if (!strcmp(pieces[0], "list")){
             // List peers
-            printf("Discovered peers: \n");
-            for (int i=0; i<peerCount; i++){
-                printf("%i:\t", i);
-                printf("%02x:%02x:%02x:%02x:%02x:%02x\n", 
-                 peerList[i][0], peerList[i][1], peerList[i][2], peerList[i][3], peerList[i][4], peerList[i][5]);
-            }
-            // TODO
+            listPeers();
+            parsed = true;
+        }
+        if (!strcmp(pieces[0], "wifi")){
+            uint8_t channel;
+            wifi_second_chan_t secondary;
+            ESP_ERROR_CHECK(esp_wifi_get_channel(&channel, &secondary));
+            printf("Wi-Fi channel: %u\n", channel);
             parsed = true;
         }
     }
@@ -346,7 +366,19 @@ void terminalParse(char *str){
             sendMessage(peerList[peerNo], MSG_IDENTIFY, 0, 0);
             parsed = true;
         }
+        if (!strcmp(pieces[0], "wifi")){
+            int wifiChannel = atoi(pieces[1]);
+            if (!isLegalWifiChannel(wifiChannel)){
+                printf("Illegal wifi channel!\n");
+            } else {
+                printf("Set wifi channel on master to %i\n", wifiChannel);
+                changeWifiChannel(wifiChannel);
+                delay(100);
+            }
+            parsed = true;
+        }
     }
+    
     if (pieceCount == 3){
         if (!strcmp(pieces[0], "dmx")){
             int ch = atoi(pieces[1]);
@@ -367,6 +399,17 @@ void terminalParse(char *str){
             int count = atoi(pieces[2]);
             printf("Set channel count on peer no %i to %i\n", peerNo, count);
             sendMessage(peerList[peerNo], MSG_CONFIG_SET, CFG_CHANNEL_COUNT, count);
+            parsed = true;
+        }
+        if (!strcmp(pieces[0], "wifi")){
+            int peerNo = atoi(pieces[1]);
+            int wifiChannel = atoi(pieces[2]);
+            if (!isLegalWifiChannel(wifiChannel)){
+                printf("Illegal wifi channel!\n");
+            } else {
+                printf("Set wifi channel on peer no %i to %i\n", peerNo, wifiChannel);
+                sendMessage(peerList[peerNo], MSG_CONFIG_SET, CFG_WIFI_CHANNEL, wifiChannel);
+            }
             parsed = true;
         }
         if (!strcmp(pieces[0], "pers")){

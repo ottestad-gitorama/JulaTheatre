@@ -9,6 +9,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "common.h"
+#include "radio.h"
 
 
 #define PWM_LED_RED LEDC_CHANNEL_0

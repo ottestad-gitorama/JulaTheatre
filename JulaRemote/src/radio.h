@@ -16,3 +16,6 @@ void print_mac_address();
 void sendMessage(const uint8_t *peer_address,message_enum msg_type, uint16_t parameter, uint16_t value);
 // void sendDiscoverRequest();
 bool waitForReply();
+void changeWifiChannel(uint8_t wifiChannel);
+bool isLegalWifiChannel(uint8_t wifiChannel);
+void removeAllPeers(void);

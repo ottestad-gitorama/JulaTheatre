@@ -3,9 +3,13 @@
 #include "terminal.h"
 #include "common.h"
 #include "storage.h"
+#include "io.h"
+
 
 void app_main() {
     initNVS();
+    ioSetup();
+    ledRed();
     radioSetup();
     terminalSetup();
 
@@ -13,12 +17,19 @@ void app_main() {
     long testTime = millis();
     int testCount = 0;
     uint16_t lastTestLoss = 0;
+    ledGreen();
     while (true){
+        ioUpdate();
        terminalUpdate();
-       delay(10); 
+       delay(20); 
+       dmx_universe[1] = (uint8_t)(255*pots[0]);
+       dmx_universe[2] = (uint8_t)(255*pots[1]);
+       dmx_universe[3] = (uint8_t)(255*pots[2]);
+       dmx_universe[4] = (uint8_t)(255*pots[3]);
     
        sendLightFrame();
        testCount++;
+       #ifdef TEST_RADIO_RANGE
        if (millis()-testTime>1000){
         testTime = millis();
                 sendMessage(peerList[0], MSG_STATUS_REQUEST, 0, 0);
@@ -31,6 +42,7 @@ void app_main() {
 
         testCount = 0;
        }
+       #endif
     } 
 
 

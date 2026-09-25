@@ -17,6 +17,8 @@ void sendMessage(message_enum, uint16_t parameter, uint16_t value);
 void sendStatus();
 void sendConfig();
 void print_mac_address();
-
+void changeWifiChannel(uint8_t wifiChannel);
+bool isLegalWifiChannel(uint8_t wifiChannel);
 extern bool doDiscoverBeaconing;
-
+extern int16_t rssi;
+extern uint16_t packet_loss;
