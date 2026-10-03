@@ -22,7 +22,8 @@ void app_main() {
     while (true){
         ioUpdate();
         terminalUpdate();
-        if(dmxUpdate()){
+        dmxUpdate();
+        {
             printf("%i\t%i\t%i\t%i\t\n", dmx_universe[0], dmx_universe[1], dmx_universe[2], dmx_universe[3]);
             // dmx_status_t s;
             // dmxGetStatus(&s);
@@ -34,8 +35,7 @@ void app_main() {
             //        dmx_universe[0], dmx_universe[1], dmx_universe[511]);
         }
         delay(20); 
-    //    if (sw1a){
-       if (gpio_get_level(DMX_IN)){
+       if (sw1a){
         ledRed();
         dmx_universe[1] = (uint8_t)(255*pots[0]);
         dmx_universe[2] = (uint8_t)(255*pots[0]);
