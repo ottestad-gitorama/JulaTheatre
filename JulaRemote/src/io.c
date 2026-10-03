@@ -5,6 +5,12 @@ float pots[4];
 adc_oneshot_unit_handle_t adc_handle;
 adc_cali_handle_t adc1_cali_chan0_handle = NULL;
 
+bool sw1a;
+bool sw1b;
+bool sw2a;
+bool sw2b;
+
+
 #define TAG "ADC_CALI"
 static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle)
 {
@@ -73,6 +79,8 @@ void ioSetup(){
     gpio_set_direction(SWITCH_2B, GPIO_MODE_INPUT);
     gpio_set_pull_mode(SWITCH_2B, GPIO_PULLUP_ONLY);
 
+    gpio_set_direction(DMX_IN, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(DMX_IN, GPIO_PULLUP_DISABLE);
 
 
    // ADC Setup
@@ -111,10 +119,10 @@ void ioUpdate(){
     pots[2] = (float)pot3/3316;
     pots[3] = (float)pot4/3316;
     // printf("P1: %.2f\tP2: %.2f\tP3: %.2f\tP4: %.2f\n", pots[0], pots[1], pots[2], pots[3]);
-    bool sw1a = !gpio_get_level(SWITCH_1A);
-    bool sw1b = !gpio_get_level(SWITCH_1B);
-    bool sw2a = !gpio_get_level(SWITCH_2A);
-    bool sw2b = !gpio_get_level(SWITCH_2B);
+    sw1a = !gpio_get_level(SWITCH_1A);
+    sw1b = !gpio_get_level(SWITCH_1B);
+    sw2a = !gpio_get_level(SWITCH_2A);
+    sw2b = !gpio_get_level(SWITCH_2B);
     // printf("S1A: %i\tS1B: %i\tS2A: %i\tS2B: %i\n", sw1a, sw1b, sw2a, sw2b);
 
 }

@@ -184,7 +184,7 @@ void sendLightFrame(){
   lightFrame.protocol_version = PROTOCOL_VERSION;
   lightFrame.message_type = MSG_LIGHT_FRAME;
   lightFrame.sequence = sequence++;
-  memcpy(lightFrame.data, dmx_universe, DMX_UNIVERSE_SIZE);
+  memcpy(lightFrame.data, dmx_universe, DMX_TRANSMITTED_UNIVERSE_SIZE);
   lightFrame.crc = getCRC((const uint8_t *) &lightFrame, sizeof(light_frame_t)-2);
 
   esp_err_t err = esp_now_send(broadcastAddress, (uint8_t *) &lightFrame, sizeof(light_frame_t)); 

@@ -35,8 +35,8 @@ void enttecPacketReceived(uint8_t label, uint8_t *data, uint16_t length)
 
     uint16_t channels = length - 1;
 
-    if (channels > DMX_UNIVERSE_SIZE) {
-        channels = DMX_UNIVERSE_SIZE;
+    if (channels > DMX_TRANSMITTED_UNIVERSE_SIZE) {
+        channels = DMX_TRANSMITTED_UNIVERSE_SIZE;
     }
 
     memcpy(dmx_universe, &data[1], channels);
@@ -283,7 +283,7 @@ void terminalParse(char *str){
     bool parsed = false;
     if (pieceCount == 1){
         if (!strcmp(pieces[0], "dmx")){
-            for (int i=0; i<DMX_UNIVERSE_SIZE; i++){
+            for (int i=0; i<DMX_TRANSMITTED_UNIVERSE_SIZE; i++){
                 printf("%i\t", dmx_universe[i]);
                 if (i%16==15) printf("\n");
             }

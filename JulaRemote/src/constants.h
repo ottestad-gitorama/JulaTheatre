@@ -1,4 +1,5 @@
 #pragma once
+#include "driver/gpio.h"
 
 #define MAX_PEERS 100
 
@@ -14,6 +15,8 @@
 #define POT4        ADC_CHANNEL_2
 #define LED_GREEN   GPIO_NUM_19
 #define LED_RED     GPIO_NUM_18
+
+#define DMX_IN  GPIO_NUM_20
 
 // Layout:
 //       A       A

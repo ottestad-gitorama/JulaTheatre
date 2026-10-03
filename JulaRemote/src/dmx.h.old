@@ -1,0 +1,17 @@
+#pragma once
+#include <string.h>
+#include "esp_dmx.h"
+#include "esp_err.h"
+#include "constants.h"
+#include "common.h"
+#include "esp_log.h"
+extern uint8_t dmx_universe[];
+
+// Using 485 shield MIROE-5752
+// From MikroE Click Boards
+// At 3v3
+// EN to High
+// CS open
+// No termination
+void dmxSetup(void);
+void dmxUpdate(void);

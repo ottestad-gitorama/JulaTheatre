@@ -1,0 +1,47 @@
+#include "dmx.h"
+
+static size_t dmx_slots_received;
+uint8_t packet_data[DMX_PACKET_SIZE];
+dmx_packet_t packet;
+static const dmx_port_t port = DMX_NUM_1;
+void dmxSetup(void)
+{
+    
+dmx_config_t config = DMX_CONFIG_DEFAULT;
+
+ESP_LOGI("DMX", "Installing driver");
+    fflush(stdout);
+
+dmx_driver_install(port, &config, NULL, 0);
+
+ESP_LOGI("DMX", "Setting pins");
+    fflush(stdout);
+
+dmx_set_pin(port, DMX_PIN_NO_CHANGE, DMX_IN, DMX_PIN_NO_CHANGE);
+
+ESP_LOGI("DMX", "Setup complete");
+}
+
+void dmxUpdate(void){
+    int packet_len = dmx_receive(port, &packet, pdMS_TO_TICKS(10));
+
+    if (packet_len <= 0 ||
+        packet.err != DMX_OK ||
+        packet.is_rdm ||
+        packet.sc != 0) {       // Ignore errors, RDM, and nonzero start codes
+        return;
+    }
+
+    int bytes_read = dmx_read(port, packet_data, packet_len);
+    if (bytes_read <= 1) {
+        return;
+    }
+
+    size_t slots = (size_t)(bytes_read - 1); // Exclude start code
+    if (slots > DMX_UNIVERSE_SIZE) {
+        slots = DMX_UNIVERSE_SIZE;
+    }
+
+    memcpy(dmx_universe, &packet_data[1], slots);
+    dmx_slots_received = slots; 
+}

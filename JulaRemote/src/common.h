@@ -8,8 +8,8 @@
 
 
 // FIXTURE ///////////////////////////////////////////////////////////////////////////////////////
-#define DMX_UNIVERSE_SIZE 100
-extern uint8_t dmx_universe[DMX_UNIVERSE_SIZE];
+#define DMX_TRANSMITTED_UNIVERSE_SIZE 100
+extern uint8_t dmx_universe[];
 
 typedef struct
 {
@@ -26,7 +26,7 @@ typedef struct __attribute__((packed))
     uint8_t  protocol_version;    // Protocol compatibility
     uint8_t  message_type;        // MSG_LIGHT_FRAME
     uint16_t sequence;            // Incrementing frame counter for uncritical loss detection
-    uint8_t  data[DMX_UNIVERSE_SIZE]; // DMX values
+    uint8_t  data[DMX_TRANSMITTED_UNIVERSE_SIZE]; // DMX values
     uint16_t crc;
 } light_frame_t;
 
